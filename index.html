@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GRITI 3.0 | 全知图鉴版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style type="text/tailwindcss">
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&family=ZCOOL+KuaiLe&display=swap');
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f1f5f9;
+        }
+
+        .handwritten {
+            font-family: 'ZCOOL KuaiLe', cursive;
+        }
+
+        .start-card {
+            @apply w-full text-left p-6 border-2 border-slate-200 rounded-2xl transition-all duration-200
+                   bg-white shadow-sm flex justify-center items-center gap-4 hover:border-indigo-500 hover:bg-indigo-50 active:scale-[0.98];
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .progress-dot {
+            @apply h-1.5 rounded-full bg-slate-200 transition-all duration-300;
+        }
+
+        .progress-dot.active {
+            @apply bg-indigo-600;
+        }
+
+        .zen-mode {
+            @apply bg-zinc-900 text-zinc-100;
+        }
+
+        .zen-mode .res-card {
+            @apply bg-zinc-800 border-zinc-700 text-zinc-300;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-12 min-h-screen flex items-center justify-center transition-colors duration-700" id="body-wrap">
+
+    <div id="app" class="w-full max-w-xl bg-white shadow-2xl rounded-[3rem] overflow-hidden transition-all duration-700">
+        <div id="header-bar" class="bg-indigo-600 p-8 text-white text-center relative transition-colors duration-700">
+            <h1 class="text-3xl font-black italic tracking-tight">GRITI 诊断系统</h1>
+            <p class="text-xs opacity-75 mt-2 tracking-widest uppercase">Ultimate Collection V3.0</p>
+
+            <div class="mt-4 text-sm md:text-base leading-relaxed text-indigo-100">
+                <p>b站up：<span class="font-bold">温岚陆吾</span></p>
+                <p class="text-xs md:text-sm opacity-90 mt-1">
+                    协作者：gemini · deepseek · chatgpt
+                </p>
+            </div>
+        </div>
+
+        <div class="p-8 md:p-10">
+            <div id="start-screen" class="fade-in">
+                <h3 class="text-center font-bold text-slate-800 mb-8 text-lg">请选择你当前的学术阶段：</h3>
+                <div class="grid grid-cols-1 gap-5">
+                    <button onclick="initQuiz('y0')" class="start-card font-bold text-slate-700">🐣 研0 · 尚未入坑</button>
+                    <button onclick="initQuiz('y1')" class="start-card font-bold text-slate-700">📝 研一 · 正在受难</button>
+                    <button onclick="initQuiz('y2')" class="start-card font-bold text-slate-700">⚙️ 研二 · 挣扎求生</button>
+                    <button onclick="initQuiz('y3')" class="start-card font-bold text-slate-700">🎓 研三 · 准备跑路</button>
+                </div>
+
+                <div class="mt-8 text-center text-xs md:text-sm text-slate-400 leading-relaxed">
+                    <p>仅供娱乐，欢迎分享给朋友一起测。</p>
+                    <p class="mt-1">愿每位研究生都能顺利毕业、顺利答辩、顺利找到理想工作。</p>
+                </div>
+            </div>
+
+            <div id="quiz-screen" class="hidden fade-in">
+                <div class="flex justify-between items-center mb-6">
+                    <button id="back-btn" onclick="prevQ()" class="text-sm font-bold text-slate-400 hover:text-indigo-600 transition flex items-center gap-1">
+                        ← 返回上一题
+                    </button>
+                    <span id="q-counter" class="text-xs font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full"></span>
+                </div>
+
+                <div class="flex gap-2 mb-8" id="dots-bar"></div>
+
+                <h2 id="q-text" class="text-xl font-bold text-slate-800 mb-8 leading-snug min-h-[4rem]"></h2>
+
+                <div id="options-area" class="space-y-4"></div>
+            </div>
+
+            <div id="result-screen" class="hidden fade-in text-center">
+                <div id="res-code" class="text-6xl font-black text-indigo-600 italic mb-2 tracking-tighter transition-colors duration-700">TYPE</div>
+                <h2 id="res-name" class="text-2xl font-bold text-slate-800 mb-4 handwritten underline decoration-indigo-200 decoration-4 underline-offset-8 transition-colors duration-700"></h2>
+
+                <div class="flex justify-center gap-4 mb-4 text-sm font-bold text-slate-500 flex-wrap" id="score-display"></div>
+
+                <div id="res-note" class="mb-6 mx-auto max-w-lg text-left bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl px-5 py-4 text-sm leading-relaxed">
+                    仅供娱乐，希望每位研究生都能顺利毕业、论文顺利、答辩顺利，最后找到理想的好工作，过上自己喜欢的生活。
+                </div>
+
+                <div id="res-card-bg" class="res-card bg-slate-50 p-8 rounded-[2.5rem] text-left mb-10 border border-slate-100 transition-colors duration-700">
+                    <p id="res-quote" class="text-indigo-600 font-bold mb-4 italic text-lg transition-colors duration-700"></p>
+                    <p id="res-desc" class="text-slate-700 text-sm leading-relaxed mb-4 transition-colors duration-700"></p>
+                    <div id="res-detail" class="text-slate-600 text-sm leading-7 transition-colors duration-700"></div>
+                </div>
+
+                <button id="restart-btn" onclick="location.reload()" class="w-full py-5 bg-slate-900 text-white rounded-2xl font-bold hover:bg-black transition-all shadow-xl">
+                    重新诊断
+                </button>
+
+                <div id="credit-footer" class="mt-6 text-center text-xs md:text-sm text-slate-400 leading-relaxed border-t border-slate-200 pt-4">
+                    <p class="font-semibold text-slate-500">本测试由 b站up：温岚陆吾 制作</p>
+                    <p class="mt-1">协作者：gemini · deepseek · chatgpt</p>
+                    <p class="mt-2">感谢体验，祝大家科研顺利，顺利毕业，顺利找到理想工作。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+const questions = {
+    y0: [
+        { q: "面对即将到来的三年，你对‘毕业论文’的最初想象是？", opts: [{t:"解决一个困扰学界多年的理论问题", d:"R", v:"T"}, {t:"开发一个能实际跑通、解决痛点的系统", d:"R", v:"A"}, {t:"随便水一水，能过盲审就行", d:"E", v:"B"}] },
+        { q: "你理想中和导师的沟通频率是？", opts: [{t:"有事再找，没事互不干扰", d:"M", v:"D"}, {t:"最好每周深入探讨，手把手指导", d:"M", v:"P"}, {t:"我在暗处观察导师的指导风格", d:"Z", v:"Z"}] },
+        { q: "你打算如何度过研一前的那个暑假？", opts: [{t:"晚上熬夜看番，下午起床健身", d:"S", v:"N"}, {t:"早起打卡学英语，规律生活", d:"S", v:"M"}] },
+        { q: "你读研的最核心理由是？", opts: [{t:"我对这个领域真的很好奇", d:"C", v:"I"}, {t:"为了简历好看，竞争力至上", d:"C", v:"E"}, {t:"还没想好，拖延一下进入社会的时间", d:"E", v:"W"}] },
+        { q: "实验室环境如果很嘈杂，你会？", opts: [{t:"戴上降噪耳机，当成特种兵的白噪音", d:"S", v:"N"}, {t:"受不了，趁没人时早起干活", d:"S", v:"M"}, {t:"去猫咖或者食堂找个安静的角落", d:"Z", v:"Z"}] },
+        { q: "帮导师报账/干杂活时，你会：", opts: [{t:"内心抵触，我来这儿不是干这个的", d:"M", v:"D"}, {t:"默默完成，权当职场演习", d:"M", v:"P"}] },
+        { q: "如果一个实验注定没有产出：", opts: [{t:"只要有趣，我想试试看", d:"C", v:"I"}, {t:"那是浪费时间，我得为毕业考虑", d:"C", v:"E"}] },
+        { q: "你理解的‘科研创新’是？", opts: [{t:"数学之美与逻辑的重构", d:"R", v:"T"}, {t:"工程的优化与效率的飞跃", d:"R", v:"A"}, {t:"一种人类智力活动的社会学观察样本", d:"Z", v:"Z"}] }
+    ],
+    y1: [
+        { q: "发现导师是个‘甩手掌柜’，你的心情？", opts: [{t:"自由万岁，我可以野蛮生长", d:"M", v:"D"}, {t:"天崩地裂，我感觉我毕不了业了", d:"M", v:"P"}, {t:"无所谓，我只关心我的B站粉丝涨了没", d:"E", v:"S"}] },
+        { q: "面对仿真报错，你通常什么时候解决？", opts: [{t:"凌晨两点，肾上腺素飙升时", d:"S", v:"N"}, {t:"早起第一件事，头脑最清醒时", d:"S", v:"M"}] },
+        { q: "你现在读文献主要是为了：", opts: [{t:"建立自己宏大的理论框架", d:"R", v:"T"}, {t:"‘偷’别人的实验方案拿来就用", d:"R", v:"A"}, {t:"找找别人逻辑的漏洞，顺便看看戏", d:"Z", v:"Z"}] },
+        { q: "写出了一段跑不通的代码：", opts: [{t:"反手丢给AI，让它给我干活", d:"C", v:"E"}, {t:"硬磕到底，必须弄清底层逻辑", d:"C", v:"I"}] },
+        { q: "面对组会汇报，你的心态：", opts: [{t:"能躲就躲，主打一个边缘化", d:"M", v:"D"}, {t:"积极展示，渴望被大牛点拨", d:"M", v:"P"}, {t:"坐在最后一排，观察每个人说话的微表情", d:"Z", v:"Z"}] },
+        { q: "目前最大的挫败感来自：", opts: [{t:"理论太深，看公式像看天书", d:"R", v:"T"}, {t:"实验总挂，调不通软件环境", d:"R", v:"A"}] },
+        { q: "你在校的时间分布是：", opts: [{t:"深夜食堂和实验室的常客", d:"S", v:"N"}, {t:"早八点准时出现在工位", d:"S", v:"M"}] },
+        { q: "一个大牛讲座 vs 舒舒服服睡一觉：", opts: [{t:"听讲座，万一有灵感呢", d:"C", v:"I"}, {t:"睡觉，精神状态决定一切", d:"C", v:"E"}] }
+    ],
+    y2: [
+        { q: "导师接了大横向项目，你的反应：", opts: [{t:"正好，拿实操数据套论文专利", d:"R", v:"A"}, {t:"唉，又要耽误我推公式了", d:"R", v:"T"}] },
+        { q: "论文投稿被拒，你看到意见时：", opts: [{t:"在邮件里数‘Regards’寻找温暖", d:"C", v:"E"}, {t:"逐条反击审稿人的傲慢与偏见", d:"C", v:"I"}, {t:"先去微博吐槽一波审稿人，赚点流量", d:"E", v:"S"}] },
+        { q: "你和导师现在的关系：", opts: [{t:"纯粹的雇佣关系", d:"M", v:"D"}, {t:"亦师亦父/母的传承感", d:"M", v:"P"}, {t:"看破红尘，按时打卡", d:"E", v:"B"}] },
+        { q: "如果导师严禁实习，你会：", opts: [{t:"阳奉阴违，面试电话不断", d:"C", v:"E"}, {t:"死心塌地，相信学术好就行", d:"C", v:"I"}] },
+        { q: "半夜数据终于显著了，你会：", opts: [{t:"发朋友圈打卡，宣告战果", d:"S", v:"N"}, {t:"保存关机，明早叫醒导师", d:"S", v:"M"}] },
+        { q: "如果你是实验室‘包工头’：", opts: [{t:"带着师弟们在工地乐此不疲", d:"R", v:"A"}, {t:"躲在后面研究背后的算法", d:"R", v:"T"}, {t:"不干，这死线还能再拖三天", d:"E", v:"W"}] },
+        { q: "你现在的科研动力源：", opts: [{t:"死线将至的求生欲", d:"S", v:"N"}, {t:"稳扎稳打的计划表", d:"S", v:"M"}] },
+        { q: "科研的终极快感来自：", opts: [{t:"中稿/奖学金到账的那一刻", d:"C", v:"E"}, {t:"逻辑完全闭环的一瞬间", d:"C", v:"I"}, {t:"旁观他人为了发paper焦头烂额", d:"Z", v:"Z"}] }
+    ],
+    y3: [
+        { q: "毕业论文‘致谢’的画风是：", opts: [{t:"深情告白，感谢每一位同僚", d:"C", v:"I"}, {t:"致谢模版，不出错就行", d:"C", v:"E"}] },
+        { q: "面对论文盲审，你的态度：", opts: [{t:"坚信理论高度能碾压专家", d:"R", v:"T"}, {t:"怕专家说我这东西不能落地", d:"R", v:"A"}, {t:"如果盲审挂了，那是学术界的损失", d:"C", v:"C"}] },
+        { q: "三年下来，你对导师的评价：", opts: [{t:"相忘于江湖，最好别见", d:"M", v:"D"}, {t:"感激涕零，终生受益", d:"M", v:"P"}] },
+        { q: "毕业后的去向选择：", opts: [{t:"继续在象牙塔搞我的理论", d:"C", v:"I"}, {t:"哪儿给得多去哪儿，不挑", d:"C", v:"E"}, {t:"找个清闲的工作，继续摸鱼", d:"E", v:"B"}] },
+        { q: "回望三年，你见得最多的是：", opts: [{t:"凌晨四点的实验室和星光", d:"S", v:"N"}, {t:"清晨六点的食堂和朝阳", d:"S", v:"M"}] },
+        { q: "对‘学术圈’的终极感受：", opts: [{t:"神圣的、逻辑严密的宫殿", d:"R", v:"T"}, {t:"巨大的、利益交换的工厂", d:"R", v:"A"}, {t:"一个巨大的草台班子，我已看透", d:"Z", v:"Z"}] },
+        { q: "面试被问到技术痛点时：", opts: [{t:"详细推导底层数学原理", d:"R", v:"T"}, {t:"重点演示工业级解决方案", d:"R", v:"A"}] },
+        { q: "最后一个问题：还读研吗？", opts: [{t:"挺好的，看透了人类读研真相", d:"M", v:"D"}, {t:"受益匪浅，掌握了生存技能", d:"M", v:"P"}] }
+    ]
+};
+
+const results = {
+    "TDNI": {
+        name: "流浪学者型",
+        quote: "导师在哪儿？哦，在开第18个会。",
+        desc: "自由选题，自我鞭策，在图书馆书架间搞量子漫步，纯粹为爱发电。",
+        detail: "你更像是“高度自驱型研究生”。你不太依赖外部监督，也不指望导师时刻给你明确路线，而是喜欢自己找问题、自己搭框架、自己慢慢磨成果。这种类型的优点是独立性强、探索欲旺盛，一旦找到真正感兴趣的方向，往往能沉得住气做出很有个人风格的东西。缺点是容易因为过于自由而节奏失控，或者钻进某个问题里太久，导致阶段性产出不足。适合你的关键词是：自我管理、长期主义、定期复盘。"
+    },
+    "TDNE": {
+        name: "海投飞鸟型",
+        quote: "这篇不中A刊，我就……改投B刊。",
+        desc: "虽然没人管，但异常高产，哪里有会议征稿哪里就有TA的摘要。",
+        detail: "你属于很典型的“成果驱动型选手”。你对投稿节奏、会议窗口、期刊梯队会比较敏感，知道如何迅速把阶段成果包装成可以投出去的版本。这种人格的优势在于行动快、抗打击能力强、不会因为一次拒稿就完全停摆。需要注意的是，高产不等于高质量，长期来看还是要留出时间做真正能代表自己能力的核心成果。你适合建立一套自己的投稿流水线：主线论文追质量，副线论文保节奏。"
+    },
+    "TDPI": {
+        name: "灵魂伴侣型",
+        quote: "这周组会取消了，因为导师和我聊了三个小时康德。",
+        desc: "与导师在学术灵魂上极度契合，虽然发不出大文章，但精神世界极度充盈。",
+        detail: "你和导师之间更像是“理念共振型关系”。你重视的是思想碰撞、研究趣味和学术表达本身，而不只是机械完成任务。这种人格很容易在研究中获得深层满足感，也更容易建立稳定的学术身份认同。问题在于，精神共鸣有时并不能自动转化为论文、专利或项目节点，所以你需要主动把讨论结果落成文档、实验计划和明确的时间表。你真正的成长点不在‘想得更深’，而在‘把深度变成成果’。"
+    },
+    "TDPE": {
+        name: "双面间谍型",
+        quote: "老板，横向报告写好了。那啥，纵向数据我跑了一下，显著了。",
+        desc: "在导师的项目和自己的想法间游刃有余，左右逢源。",
+        detail: "你是那种很会在不同任务之间切换的人，既能照顾导师的现实需求，也不会完全放弃自己的研究方向。你的优势是平衡感好、资源整合能力强、对环境适应快，在复杂课题组里通常活得比较稳。风险在于，你容易同时背太多任务，短期看像高效，长期看可能会让真正重要的主线被切碎。你最需要的不是更努力，而是更清晰的优先级排序。把“必须完成”和“最好完成”分开，你会轻松很多。"
+    },
+    "ADNI": {
+        name: "民间科学家型",
+        quote: "我觉得这个模型能解决卡脖子问题，就是没人信我。",
+        desc: "热衷于用简陋实验装置搞大新闻，导师除了点赞毫无贡献。",
+        detail: "你很有那种“自己点火自己烧”的实验精神。你不一定拥有最好的资源，但常常愿意用有限条件去验证大胆想法，行动力和创造性都很强。这类人格最可贵的地方，是不容易被现成规则束缚，常能想到别人不会先做的路径。相对的，你也可能因为太相信自己的直觉而忽略验证细节，或者在资源不足时反复撞墙。你最需要的是一个能帮你做收束的人：用更规范的实验设计，把你的灵感沉淀成可复现的成果。"
+    },
+    "ADNE": {
+        name: "实习先锋型",
+        quote: "实验室没网？正好，我去公司写代码了。",
+        desc: "人在曹营心在汉，用最快的速度满足毕业要求，然后全职实习。",
+        detail: "你对读研这件事有非常明确的现实判断：学位要拿，但职业发展不能等。你往往很早就把科研、实习、就业放在同一张表里规划，执行上也偏务实高效。这种人格的优点是职业敏感度高、资源利用率高、不容易被单一路径绑住。要注意的是，实习和毕业经常在后期发生正面冲突，所以你越早把论文、毕设、中期这些硬节点往前推，后面越不容易崩。你的核心策略不是“二选一”，而是“提前布局”。"
+    },
+    "ADPI": {
+        name: "作坊少主型",
+        quote: "老师，这个专利挂您一作，我二作就行。",
+        desc: "导师接横向项目，学生在具体实施中获得了巨大的动手快乐。",
+        detail: "你是非常典型的“在实操中成长”的人。相比空谈理论，你更喜欢真正做东西、调系统、跑设备、推项目，边做边学的效率往往比单纯看文献更高。这种人格很适合工程型课题、交叉项目和应用场景明确的研究。你的问题通常不是不会做，而是容易只顾着把事情做完，忽略成果表达、论文包装和知识抽象。你真正需要补的，是把经验升级成方法论，把项目经历翻译成简历和论文语言。"
+    },
+    "ADPE": {
+        name: "画饼接班人型",
+        quote: "王总，这个横向我们下周交付。那个纵向国自然本子我在写。",
+        desc: "课题组二老板，既要帮导师赚钱，又要帮导师评职称。",
+        detail: "你身上已经有一点“小 PI”气质了。你不只是在做学生任务，而是在协助维持整个课题组运转：沟通、交付、推进、协调、写材料，什么都能沾一点。这种人格在现实中很吃香，因为它意味着可靠、能扛事、懂上下游。风险同样明显：你会越来越像管理者，却可能没有时间沉下心做自己的核心成果。你要记得，研究生阶段最值钱的仍然是‘属于你自己、别人拿不走的成果’。别只当救火队长。"
+    },
+    "TPNI": {
+        name: "阁楼上的疯学者型",
+        quote: "老师觉得这个证明不够优美，让我推翻重来第十二次。",
+        desc: "被导师的高标准按在地上摩擦，痛并高贵着。",
+        detail: "你处在一种高标准、高要求、高消耗的训练环境里。导师对你要求严，往往不是只要你做出来，而是要你做得漂亮、讲得通、逻辑完整。这种人格的长期收益其实很高，因为它会逼着你形成很硬的学术基本功。问题是过程确实痛苦，你很容易在反复重做中怀疑自己。对你来说最重要的不是降低标准，而是学会阶段性交付：先有版本，再谈完美。你不是不行，只是常常被要求一次性做到太好。"
+    },
+    "TPNE": {
+        name: "高产奶牛型",
+        quote: "这是本周的第三版初稿，您看看？",
+        desc: "导师是农场主，学生是产出论文的永动机。",
+        detail: "你是标准的高压高产环境产物。你可能早就习惯了反复修改、连续交稿、短周期产出，写东西和赶 deadline 对你来说几乎成了肌肉记忆。这种人格的优势是执行力极强、产出效率高、适应强监督环境。可代价也很现实：容易疲惫、容易把自己工具化、容易在‘持续输出’中忘记研究本来的兴趣。你需要给自己保留一点“非交差式思考”的时间，不然很容易在毕业前后出现明显的心力透支。"
+    },
+    "TPPI": {
+        name: "血脉压制型",
+        quote: "好的老师，我这就去把这篇80页的德文文献读了。",
+        desc: "导师像严厉的父母，学生虽心有抱怨，但不得不承认导师是对的。",
+        detail: "你和导师的关系里带着明显的“权威塑形”色彩。导师会强势介入你的学习方式、阅读路径和研究标准，而你虽然嘴上吐槽，实际上也知道这种训练确实让你成长很快。这类人格最大的特点，是基础扎实、服从度高、执行质量好。问题在于，一旦长期只跟着权威走，可能会削弱你自己的判断力和选题主导性。你后期真正需要完成的任务，是从‘会做学生’过渡到‘会做研究者’。"
+    },
+    "TPPE": {
+        name: "学术伉俪型",
+        quote: "数据跑出来了！马上发您，这篇Nature子刊稳了！",
+        desc: "师徒二人同心，其利断金，所向披靡。",
+        detail: "你和导师之间是一种非常高效的合作关系：沟通顺畅、方向一致、节奏匹配，很多事情往往一句话就能接上。这类人格在科研环境里非常幸运，因为好导师和好配合本身就是稀缺资源。你通常会比别人走得更稳，也更容易拿到高质量成果。需要提醒的是，合作再顺，也别完全依赖单一支持系统。逐步建立自己的研究风格、表达体系和外部合作网络，未来会走得更远。"
+    },
+    "APNI": {
+        name: "工地包工头型",
+        quote: "师兄！那个设备又炸了！老师叫你！",
+        desc: "课题是建个大装置，导师在背后指挥，学生在工地板砖并乐在其中。",
+        detail: "你是典型的“复杂系统现场型选手”。你不怕麻烦，也不介意干脏活累活，反而能在设备、流程、协同和现场问题里找到自己的节奏。这种人格特别适合大工程、大平台和实验条件重的方向，因为你真的能把一堆零散问题拧成一个能跑的系统。难点在于，这类工作很容易成果归因模糊——你干了很多，但论文里不一定写得出来。所以你要有意识记录过程、保存数据、提炼自己的关键贡献。别让自己只剩‘干活很厉害’这个评价。"
+    },
+    "APNE": {
+        name: "特种兵打工型",
+        quote: "只要钱给够，格式刷冒烟也行。",
+        desc: "明确告诉导师：我只为毕业和劳务费奋斗，别跟我谈情怀。",
+        detail: "你对规则和交易关系看得很清楚：做事可以，吃苦可以，但前提是目标明确、回报清楚。你不太吃空泛理想那一套，更擅长把研究生生活理解成一个阶段性项目管理任务。这种人格的好处是心态稳定、边界清晰、不容易被情绪绑架。潜在问题是，一旦只盯回报，就容易降低对长期能力积累的重视。你的最佳状态其实不是完全功利，而是‘在现实清醒的前提下，顺手把硬技能练出来’。"
+    },
+    "APPI": {
+        name: "手艺传承人型",
+        quote: "这套抛光手法是我师爷传下来的，不能外传。",
+        desc: "导师手把手教实验技巧，学生对导师的崇拜如滔滔江水。",
+        detail: "你非常适合“经验密集型”的研究训练。你重视细节、尊重规范、愿意反复练习，很多别人看不上眼的工艺、手感和操作经验，在你这里会慢慢变成真正的优势。这类人格通常在实验技能、工程手感和流程稳定性上特别强。要注意的是，经验传承固然重要，但研究不能只停留在‘会做’。当你掌握了技艺之后，还要进一步回答：为什么这么做、能否标准化、能否写成方法、能否形成可传播的知识。"
+    },
+    "APPE": {
+        name: "商业闭环型",
+        quote: "样品我测完了，市场报告我也写好了，咱们公司下季度能融资吗？",
+        desc: "论文还没写，商业计划书已经改到V9.0了。",
+        detail: "你是那种天然会把科研往现实世界里连接的人。你不满足于“能发论文”，更关心这东西有没有用户、有没有市场、能不能落地、能不能变现。这种人格在当前环境下非常有优势，因为它意味着你具备从技术走向应用的桥接能力。问题在于，商业逻辑和学术逻辑并不完全一样，你要防止两边都沾、两边都不够深。最好的做法是先明确主副线：一个抓学位成果，一个抓产业转化。"
+    },
+
+    "EXTRA_N": {
+        name: "猫头鹰捕获型 (夜猫战神)",
+        quote: "晚安，我去写论文了。",
+        desc: "零点思路泉涌，三点觉得能拿诺奖，第二天下午两点在工位补觉。",
+        detail: "你的节律非常偏夜型，很多思路、灵感和执行力都在深夜爆发。你可能在晚上比白天更专注、更安静，也更容易进入心流状态。这种人格并不一定效率低，反而可能在适合自己的节奏里做出高质量工作。问题主要出在和现实制度冲突：组会、实验预约、白天沟通、身体状态，都会让你付出额外成本。你要做的不是强行改造成早起型，而是尽量把夜间高效和白天刚需平衡好。"
+    },
+    "EXTRA_M": {
+        name: "农场主雄鸡型 (晨型鸟人)",
+        quote: "你们怎么还在睡？我摘要都写完了。",
+        desc: "早上六点霸占实验室仪器，晚上九点准时消失养生。",
+        detail: "你属于非常稀缺的晨型高效人。你一天中最清醒的时段往往在早晨，适合写作、推导、做实验、处理复杂任务。这种人格的稳定性很强，也更容易形成规律生活，不容易被拖延和熬夜击穿。需要注意的是，晨型优势容易让你对别人的节奏失去耐心，比如不理解为什么有人晚上才高效。对你来说，最优解是继续保持自己的黄金时间，同时给协作留出一点弹性。"
+    },
+    "EXTRA_I": {
+        name: "圣徒苦修型",
+        quote: "不需要发钱，让我做这个实验就是最大的奖励。",
+        desc: "发自内心觉得科研好玩，最纯粹的博士生。",
+        detail: "你的核心驱动力非常内在。你做研究不是主要为了简历、工资、身份或外部评价，而是因为你真的对问题本身感兴趣。这种人格很珍贵，因为它能支撑长周期深度投入，也更容易在困难阶段坚持下来。可风险也很直接：容易低估现实压力，忽略求职、毕业、成果节点这些“看起来不纯粹”的事情。你不需要变功利，但要学会给纯粹加一点现实保护层。"
+    },
+    "EXTRA_E": {
+        name: "项目经理型",
+        quote: "这个成果对找工作/评奖学金/落户加分有什么用？",
+        desc: "每一步都精准计算投入产出比，精致的利己主义科研人。",
+        detail: "你是典型的结果导向人格。你擅长从目标倒推路径，知道什么事情值得做、什么事情该放弃，对资源和时间都比较敏感。这种人格在竞争环境里往往很占优势，因为你不容易被无效努力困住。需要注意的是，过度追求 ROI 可能让你失去对长期能力和深度积累的耐心。真正厉害的现实主义，不是只做立刻见效的事，而是知道哪些长期积累迟早会兑现。"
+    },
+    "EXTRA_C": {
+        name: "薛定谔的信徒型",
+        quote: "我觉得数据显著了……哦不，我又觉得是假阳性。",
+        desc: "永远在自我怀疑和自我肯定之间反复横跳。",
+        detail: "你是一个非常容易进行反思和自我校正的人。你不会轻易盲信自己的结果，但也正因为如此，经常在‘是不是我不行’和‘其实我已经很接近了’之间反复波动。这类人格的优点是审慎、细致、不容易犯低级自信错误。缺点则是心理消耗大，做决定时容易内耗。对你最重要的一件事，是建立外部验证机制：用记录、实验复现、导师反馈和时间节点替代纯情绪判断。"
+    },
+
+    "BEHAV_S": {
+        name: "赛博游魂型",
+        quote: "有这时间看文献，不如在微博/小红书当学术网红。",
+        desc: "现实中的i人，网络上的学术大V。",
+        detail: "你很懂表达，也很懂传播。你不一定是最传统意义上的“书斋型学者”，但你往往知道怎么把知识讲出去、把观点包装得更易理解，甚至把研究生活本身变成一种内容。这种人格的优势是公众表达能力强、信息敏感、容易建立个人品牌。风险在于，外部反馈太即时，很容易比长期研究更让人上瘾。你不必放弃表达天赋，但最好给自己设一条底线：内容可以做，主线不能丢。"
+    },
+    "BEHAV_W": {
+        name: "死线战士型",
+        quote: "只要截止日期没到，这个综述我就还能拖。",
+        desc: "平时不动如山，死线前三天动如癫痫，爆发力极强。",
+        detail: "你并不是不会做，而是特别依赖截止日期触发状态。一旦真正到了必须交的时刻，你的执行速度、决断力和专注度会突然飙升，甚至能在极限状态下完成平时想都不敢想的任务量。这类人格的确有爆发力，但代价也明显：质量波动大、压力集中、身体和情绪都容易被透支。你最适合的改法不是‘彻底不拖延’，而是人为制造小死线，把最终崩盘拆成多个可控冲刺。"
+    },
+    "BEHAV_B": {
+        name: "佛系躺椅型",
+        quote: "能毕业就行，多发一篇也不能多长一斤肉。",
+        desc: "看透红尘，按时打卡，按时毕业，心态王者。",
+        detail: "你对很多竞争叙事已经自动免疫了。你不太容易被外界排名、比较、焦虑牵着走，更在意生活感受和基本稳定。这种人格在高压环境里其实是种很强的心理保护机制，能帮你避免很多无意义内耗。问题在于，佛系和摆烂只差一线，如果缺乏最低限度规划，后期很容易变成被动应付。对你来说最好的状态是：心态松，但节点不能松；欲望低，但行动不断。"
+    },
+
+    "ZERO": {
+        name: "THE OBSERVER (隐藏款)",
+        quote: "“嗯。”（嘴角带着一丝难以捉摸的微笑）",
+        desc: "日常表现：该生极少在工位出现，但你总能在食堂或猫咖的角落看到TA。\n隐藏技能：全知。TA知道隔壁服务器密码，知道行政楼谁办事快。偶尔出现用三句话点出你文章漏洞，飘然离去。\n人格信条：“我不是来读研的，我是来观察人类读研的。”",
+        detail: "你是整个系统里最像“旁观者清”的那一类。你不一定高频参与所有显性竞争，但你观察力强、信息整合快、对环境和人际氛围的判断往往异常精准。你可能表面松弛，实则很懂规则，也很会看穿研究生生态中的各种微妙关系。你的优势是清醒、抽离、有洞察；你的挑战是容易站得太远，最后变成什么都看明白了，却少一点亲自下场的确定成果。适度入局，会让你的天赋更完整。"
+    }
+};
+
+function createInitialScores() {
+    return {
+        R: { T: 0, A: 0 },
+        M: { D: 0, P: 0 },
+        S: { N: 0, M: 0 },
+        C: { I: 0, E: 0, C: 0 },
+        E: { S: 0, W: 0, B: 0 },
+        Z: { Z: 0 }
+    };
+}
+
+let currentS = '';
+let qIdx = 0;
+let history = [];
+let scores = createInitialScores();
+
+const optionThemes = [
+    { wrapper: "bg-blue-50/60 border-blue-200 hover:bg-blue-100 hover:border-blue-500 text-blue-900", check: "border-blue-300 bg-white group-hover:bg-blue-200 group-hover:border-blue-500" },
+    { wrapper: "bg-emerald-50/60 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-500 text-emerald-900", check: "border-emerald-300 bg-white group-hover:bg-emerald-200 group-hover:border-emerald-500" },
+    { wrapper: "bg-amber-50/60 border-amber-200 hover:bg-amber-100 hover:border-amber-500 text-amber-900", check: "border-amber-300 bg-white group-hover:bg-amber-200 group-hover:border-amber-500" }
+];
+
+function initQuiz(stage) {
+    currentS = stage;
+    qIdx = 0;
+    history = [];
+    scores = createInitialScores();
+
+    document.getElementById('start-screen').classList.add('hidden');
+    document.getElementById('quiz-screen').classList.remove('hidden');
+
+    renderQ();
+}
+
+function renderQ() {
+    const qList = questions[currentS];
+    const q = qList[qIdx];
+
+    document.getElementById('q-counter').innerText = `${String(qIdx + 1).padStart(2, '0')} / ${String(qList.length).padStart(2, '0')}`;
+    document.getElementById('q-text').innerText = q.q;
+    document.getElementById('back-btn').style.visibility = qIdx === 0 ? 'hidden' : 'visible';
+
+    const bar = document.getElementById('dots-bar');
+    bar.innerHTML = '';
+    for (let i = 0; i < qList.length; i++) {
+        const d = document.createElement('div');
+        d.className = `progress-dot flex-1 ${i <= qIdx ? 'active' : ''}`;
+        bar.appendChild(d);
+    }
+
+    const area = document.getElementById('options-area');
+    area.innerHTML = '';
+
+    q.opts.forEach((o, index) => {
+        const theme = optionThemes[index % optionThemes.length];
+        const btn = document.createElement('button');
+
+        btn.className = `group w-full text-left p-5 border-2 rounded-2xl transition-all duration-200 shadow-sm flex items-start gap-4 active:scale-[0.98] fade-in ${theme.wrapper}`;
+
+        btn.innerHTML = `
+            <div class="w-6 h-6 rounded-full border-2 flex-shrink-0 mt-0.5 transition-colors ${theme.check}"></div>
+            <div class="font-bold text-base leading-snug">${o.t}</div>
+        `;
+
+        btn.onclick = () => {
+            history.push({ dim: o.d, val: o.v });
+            scores[o.d][o.v]++;
+
+            if (++qIdx < qList.length) {
+                renderQ();
+            } else {
+                showResult();
+            }
+        };
+
+        area.appendChild(btn);
+    });
+}
+
+function prevQ() {
+    if (qIdx > 0) {
+        qIdx--;
+        const last = history.pop();
+        scores[last.dim][last.val]--;
+        renderQ();
+    }
+}
+
+function calculateResultCode() {
+    if (scores.Z.Z >= 2) return "ZERO";
+
+    if (scores.E.S >= 2) return "BEHAV_S";
+    if (scores.E.W >= 2) return "BEHAV_W";
+    if (scores.E.B >= 2) return "BEHAV_B";
+    if (scores.C.C >= 1) return "EXTRA_C";
+
+    if (scores.S.N - scores.S.M >= 3) return "EXTRA_N";
+    if (scores.S.M - scores.S.N >= 3) return "EXTRA_M";
+    if (scores.C.I - scores.C.E >= 3) return "EXTRA_I";
+    if (scores.C.E - scores.C.I >= 3) return "EXTRA_E";
+
+    const r = scores.R.T >= scores.R.A ? 'T' : 'A';
+    const m = scores.M.D >= scores.M.P ? 'D' : 'P';
+    const s = scores.S.N >= scores.S.M ? 'N' : 'M';
+    const c = scores.C.I >= scores.C.E ? 'I' : 'E';
+
+    return r + m + s + c;
+}
+
+function showResult() {
+    const code = calculateResultCode();
+    const res = results[code] || results["TDNI"];
+
+    document.getElementById('quiz-screen').classList.add('hidden');
+    document.getElementById('result-screen').classList.remove('hidden');
+
+    document.getElementById('res-code').innerText = code === "ZERO" ? "ZERO" : code;
+    document.getElementById('res-name').innerText = res.name;
+    document.getElementById('res-quote').innerText = `“${res.quote}”`;
+
+    document.getElementById('res-desc').innerHTML = res.desc.replace(/\n/g, '<br><br>');
+
+    document.getElementById('res-detail').innerHTML = `
+        <div class="mt-2">
+            <div class="font-bold text-slate-800 mb-2">详细讲解</div>
+            <div>${(res.detail || "这种人格说明你在科研节奏、导师关系和成果偏好上有比较鲜明的个人风格。保持自己的优势，同时注意平衡毕业、生活和求职节奏。").replace(/\n/g, '<br><br>')}</div>
+        </div>
+    `;
+
+    document.getElementById('res-note').innerHTML = `
+        <span class="font-bold">温馨提示：</span>
+        本测试结果仅供娱乐，希望每位研究生都能顺利毕业、论文顺利、答辩顺利，最终找到理想的好工作。科研很难，但你已经很棒了。
+    `;
+
+    const scoreHtml = `
+        <span class="px-3 py-1 bg-slate-100 rounded-md border border-slate-200">理论[T] ${scores.R.T}</span>
+        <span class="px-3 py-1 bg-slate-100 rounded-md border border-slate-200">应用[A] ${scores.R.A}</span>
+        <span class="px-3 py-1 bg-slate-100 rounded-md border border-slate-200">内在[I] ${scores.C.I}</span>
+        <span class="px-3 py-1 bg-slate-100 rounded-md border border-slate-200">外在[E] ${scores.C.E}</span>
+    `;
+
+    if (code !== "ZERO") {
+        document.getElementById('score-display').innerHTML = scoreHtml;
+    } else {
+        document.getElementById('score-display').innerHTML = `<span class="px-3 py-1 bg-zinc-800 text-zinc-400 rounded-md border border-zinc-700">???</span>`;
+    }
+
+    if (code === "ZERO") {
+        document.getElementById('body-wrap').classList.add('bg-zinc-950');
+        document.getElementById('app').classList.replace('bg-white', 'bg-zinc-900');
+        document.getElementById('header-bar').className = "bg-zinc-950 p-8 text-zinc-500 text-center relative border-b border-zinc-800 transition-colors duration-700";
+        document.getElementById('res-code').classList.replace('text-indigo-600', 'text-zinc-500');
+        document.getElementById('res-name').classList.replace('text-slate-800', 'text-zinc-300');
+        document.getElementById('res-name').classList.replace('decoration-indigo-200', 'decoration-zinc-700');
+        document.getElementById('res-card-bg').classList.replace('bg-slate-50', 'bg-zinc-800');
+        document.getElementById('res-card-bg').classList.replace('border-slate-100', 'border-zinc-700');
+        document.getElementById('res-quote').classList.replace('text-indigo-600', 'text-zinc-400');
+        document.getElementById('res-desc').classList.replace('text-slate-700', 'text-zinc-300');
+        document.getElementById('res-detail').classList.replace('text-slate-600', 'text-zinc-400');
+        document.querySelector('#res-detail .font-bold')?.classList.replace('text-slate-800', 'text-zinc-200');
+        document.getElementById('res-note').className = "mb-6 mx-auto max-w-lg text-left bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-2xl px-5 py-4 text-sm leading-relaxed";
+        document.getElementById('credit-footer').className = "mt-6 text-center text-xs md:text-sm text-zinc-500 leading-relaxed border-t border-zinc-700 pt-4";
+        document.getElementById('restart-btn').classList.replace('bg-slate-900', 'bg-zinc-950');
+        document.getElementById('restart-btn').classList.replace('text-white', 'text-zinc-500');
+        document.getElementById('restart-btn').classList.add('border', 'border-zinc-800');
+    }
+}
+</script>
+</body>
+</html>
